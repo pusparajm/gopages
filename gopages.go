@@ -114,5 +114,6 @@ func clean() (err os.Error) {
 	if err != nil {
 		println(err.String())
 	}
+	build(GOBUILD, "-clean")
 	return
 }

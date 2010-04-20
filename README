@@ -124,9 +124,9 @@ Then create your webpages with the rules
 		e.g. {{ strconv io ioutil }} <html> <head> ...
 		you can separate them with any whitespace character(s)
 	there are some built-in variables and functions to use: 
-		conn *http.Conn, request *http.Request, formValue(string key), print(string text)
-		- formValue(string key) to retrieve value from GET or POST requests
-		- print(string text) to print
+		conn *http.Conn, request *http.Request, formValue(key string), print(text ...interface{})
+		- formValue(key string) to retrieve value from GET or POST requests
+		- print(text ...interface) to print any data type
 		- to do other things, read the godoc for http.Conn and http.Request
 
 All your pages and anything you want gopages to handle must be in the srcfolder 

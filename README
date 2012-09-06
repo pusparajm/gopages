@@ -46,7 +46,7 @@ then create hello.go
  )
  
  func main(){
-    http.HandleFunc("/", gopages.Handler("hello.ghtml"))
+    http.HandleFunc("/", gopages.Handler("index.ghtml"))
     http.ListenAndServe(":9999", nil)
  }
 -------

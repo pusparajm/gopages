@@ -1,0 +1,19 @@
+{{ fmt time }}
+<html>
+	<head><title><?go print("Hello with gopages") ?></title>
+	<body>
+		<a href="echo">Echo example</a><br>
+		<img src="gopages.png" />
+		<?go 
+			for i := 1 ; i < 5; i++{
+		?>
+			<h<?go print(i) ?>>Hello gopages</h<?go print(i) ?>>
+		<?go
+			}
+		?>
+		<hr>
+		<?go
+			print("page generated on " +time.Now().String())
+		?>
+	</body>
+</html>

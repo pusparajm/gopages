@@ -1,0 +1,17 @@
+extensions {
+	ghtml
+}
+
+handle {
+	ALL
+}
+
+srcfolder{
+	src
+}
+
+default{
+	echo
+}
+
+Read the Readme for help on settings file

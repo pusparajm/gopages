@@ -16,15 +16,14 @@ in the source folder with the exception of the source codes.
 gopages is compiled before execution.
 
 
-REQUIREMENTS
+INSTALL
 ============
-To use gopages, gobuild (http://code.google.com/p/gobuild) is required
+$ go get code.google.com/p/gopages
 
--gobuild executable must be copied to your $GOBIN for gopages to access it
--build gopages using gobuild (or download the binary)
--copy gopages to your $GOBIN or add it to your $PATH or anywhere accessible
-
-It is easy to use.
+EXAMPLES
+========
+$ go get code.google.com/p/gopages/examples
+$ $GOPATH/bin/examples
 
 a simple hello world example
 
@@ -57,8 +56,12 @@ then create a hello.go in the root folder with the content
     pages.Run(":9999") //start server on localhost:9999
  }
 
-open terminal, navigate to project root and run gopages
-then run ./hello
+open terminal
+
+$ cd path/to/project
+$ gopages && go get
+
+run the resulting executable
 
 finally, point your browser to localhost:9999
 
@@ -114,51 +117,26 @@ default - the page to load by default (one value) e.g. the Hello World example l
 
 Only the braces matters, you can separate with any whitespace character
 
-You may be wondering why I didn't use common standards like XML, I just thought
-this is easy enough to write. But as the project grows, there may need for XML.
-
-
 Then create your webpages with the rules
 	Design your webpages normally and embed your codes in <?go ?> tags just like php
 	if you need to import any package, your webpage must begin with "{{ libraries to import }}" without quotes
 		e.g. {{ strconv io ioutil }} <html> <head> ...
 		you can separate them with any whitespace character(s)
 	there are some built-in variables and functions to use: 
-		conn *http.Conn, request *http.Request, formValue(key string), print(text ...interface{})
+		conn *http.ResponseWriter, request *http.Request, formValue(key string), print(text ...interface{})
 		- formValue(key string) to retrieve value from GET or POST requests
 		- print(text ...interface) to print any data type
-		- to do other things, read the godoc for http.Conn and http.Request
+		- to do other things, read the godoc for http.ResponseWriter and http.Request
 
 All your pages and anything you want gopages to handle must be in the srcfolder 
 you specify in the settings file, you may add other handlers manually if you need 
 to access other locations
 
-the srcfolder and pages folder (where generated codes are stored) are not accessible 
-through http requests which is in most cases the web browser.
+the srcfolder and pages folder (where generated codes are stored) are not accessible through http requests
 
 To access your pages from web browser, use the path without the file extension.
 Just like the hello world example above, the address to locate the index.ghtml file is localhost:9999/index
+
 NOTE:
 having index.ghtml and index.do in same folder where gopages is handling both ghtml and do
 will lead to having only one, with one overwriting the other, the one generated last.
-
-Finally, in your main.main func you must call pages.Run for all handlers to be added.
-navigate to your package root, run gopages and execute the resulting executable
-or run "gopages -run" without quotes to run the executable after successful build
-
-EXAMPLES
-========
-to run the examples, extract the examples and navigate to the folder 
-open terminal and run gopages 
-run ./main
-and finally navigate your browser to http://localhost:9999
-
-Enjoy
-
-
-To use makefile with gopages instead of gobuild (if you'd prefer)
-run gopages -make "flags" e.g. gopages -make "install"
-gopages assume make is located in '/usr/bin/make'
-
-COMMENTS and TIPS are welcome in my inbox and blog(abiola89.blogspot.com). Anyone interested in the 
-project can mail me too.

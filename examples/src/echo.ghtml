@@ -1,0 +1,25 @@
+{{ time }}
+<html>
+	<head><title><?go print("Echo with gopages") ?></title>
+	<body>
+		<a href="hello" >Hello example</a> <br>
+		<img src="gopages.png" />		
+		<h1>Echo with gopages</h1>
+		<?go 
+			a := formValue("input")
+			if len(a) > 0 { print("you input '"+a+"'") }
+		?>
+		<form action="/echo" method="post">
+			Input <input type="text" name="input"/>
+			<input type="submit" value="Echo with POST"/>
+		</form>
+		<form action="/echo" method="get">
+			Input <input type="text" name="input"/>
+			<input type="submit" value="Echo with GET"/>
+		</form>
+			<hr>
+		<?go
+			print("page generated on " +time.Now().String())
+		?>
+	</body>
+</html>

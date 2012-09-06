@@ -8,10 +8,11 @@
 package main
 
 import (
-	"util"
-	"os"
-	"strings"
+	"code.google.com/p/gopages/util"
+	"errors"
 	"flag"
+	"os"
+	"os/exec"
 	"path"
 )
 
@@ -22,46 +23,27 @@ const (
 
 //where the build execution starts
 func main() {
-	make := flag.Bool("make", false, "build package with make (a Makefile must exist)")
-	gobuild := flag.Bool("gobuild", true, "build package with gobuild (gobuild must be in $GOBIN)")
-	flags := flag.String("flags", "", "flags for build tool selected e.g. '-lib' for gobuild or 'install' for make")
 	cl := flag.Bool("clean", false, "don't build, just clean the generated pages")
-	run := flag.Bool("run", false, "run the generated executable (only works with gobuild)")
+	//run := flag.Bool("run", false, "run the generated executable after build")
 	flag.Parse()
 	if *cl {
 		err := clean()
 		if err != nil {
-			println(err.String())
+			println(err.Error())
 		}
 		return
 	}
 	settings, err := util.LoadSettings() //inits the settings and generates the .go source files
 	if err != nil {
-		println(err.String())
+		//println(err.Error())
 		return
 	}
 	util.Config = settings.Data //stores settings to accessible variable
 	println("generated", len(settings.Data["pages"]), "gopages")
 	err = util.AddHandlers(settings.Data["handle"]) //add all handlers
 	if err != nil {
-		println(err.String())
+		println(err.Error())
 		return
-	}
-	var do int
-	if *run {
-		err = build(GOBUILD, "-run") //build with corresponding build tool
-		if err != nil {
-			println(err.String())
-		}
-		return
-	} else if *make {
-		do = MAKE
-	} else if *gobuild {
-		do = GOBUILD
-	}
-	err = build(do, *flags) //build with corresponding build tool
-	if err != nil {
-		println(err.String())
 	}
 }
 
@@ -69,51 +51,36 @@ func main() {
 func init() {
 	err := os.MkdirAll(util.DIR, 0755)
 	if err != nil {
-		println(err.String())
+		println(err.Error())
 		os.Exit(1)
 	}
 }
 
 //to build the project with gobuild or make after generating .go source files
-func build(b int, s string) (err os.Error) {
-	p := strings.Fields(s)
-	params := make([]string, len(p)+1)
-	params[0] = ""
-	for i, param := range p {
-		params[i+1] = param
-	}
-	m := b == MAKE
-	g := b == GOBUILD
+func build() (err error) {
 	fd := []*os.File{os.Stdin, os.Stdout, os.Stderr}
-	if m {
-		id, err := os.ForkExec("/usr/bin/make", params, os.Environ(), "", fd)
-		if err != nil {
-			return
-		} else {
-			os.Wait(id, 0)
-		}
-	} else if g {
-		gobuild := os.Getenv("GOBIN")
-		if len(gobuild) == 0 {
-			gobuild = path.Join(os.Getenv("HOME"), "bin", "gobuild")
-		} else {
-			gobuild = path.Join(gobuild, "gobuild")
-		}
-		id, err := os.ForkExec(gobuild, params, os.Environ(), "", fd)
-		if err != nil {
-			return
-		} else {
-			os.Wait(id, 0)
-		}
+	goexec, _ := exec.LookPath("go")
+	if len(goexec) == 0 {
+		return errors.New("go not found in PATH")
+	}
+	source := ""
+	dir, file := path.Split(source)
+	//	id, err := os.ForkExec(gofmt, []string{"", "-w", file}, os.Environ(), dir, fd)
+	process, err := os.StartProcess(file, []string{"", "get", file}, &os.ProcAttr{Env: os.Environ(), Files: fd, Dir: dir})
+	if err != nil {
+		return
+	} else {
+		process.Wait()
+		//os.Wait(id, 0)
 	}
 	return
 }
+
 //deletes the generated source codes
-func clean() (err os.Error) {
+func clean() (err error) {
 	err = os.RemoveAll(util.DIR)
 	if err != nil {
-		println(err.String())
+		println(err.Error())
 	}
-	build(GOBUILD, "-clean")
 	return
 }

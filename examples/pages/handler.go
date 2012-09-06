@@ -4,45 +4,10 @@
 package pages
 
 import (
-	"net/http"
-	"os"
-	"strings"
+	"code.google.com/p/gopages/pkg"
 )
 
-func Run(address string) (err error) {
-	println("gopages serving on", address)
-	err = http.ListenAndServe(address, nil)
-	return
-}
-
-func RenderGoPagesForbidden(conn http.ResponseWriter, request *http.Request) {
-	conn.WriteHeader(403)
-	conn.Write([]byte("<h1>403 Forbidden</h1>"))
-}
 func init() {
-	http.Handle("/echo", http.HandlerFunc(Rendersrcechoghtml))
-	http.Handle("/echo.ghtml", http.HandlerFunc(RenderGoPagesForbidden))
-	http.Handle("/hello", http.HandlerFunc(Rendersrchelloghtml))
-	http.Handle("/hello.ghtml", http.HandlerFunc(RenderGoPagesForbidden))
-
-	http.Handle("/", http.HandlerFunc(func(conn http.ResponseWriter, request *http.Request) {
-		if request.URL.Path == "/" {
-			defaultPage := "echo"
-			if strings.TrimSpace(defaultPage) != "" {
-				http.Redirect(conn, request, defaultPage, http.StatusFound)
-			}
-			return
-		}
-		val := "src" + request.URL.Path
-		_, err := os.Open(val)
-		if err != nil {
-			conn.WriteHeader(404)
-			conn.Write([]byte("<h1>404 Not Found</h1>"))
-			return
-		}
-		http.ServeFile(conn, request, val)
-	}))
-	http.Handle("/src", http.HandlerFunc(RenderGoPagesForbidden))
-	http.Handle("/pages", http.HandlerFunc(RenderGoPagesForbidden))
-
+	gopages.ParsedPages["src/echo.ghtml"] = Rendersrcechoghtml
+	gopages.ParsedPages["src/hello.ghtml"] = Rendersrchelloghtml
 }

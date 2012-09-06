@@ -8,6 +8,7 @@
 package util
 
 import (
+	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"os"
@@ -122,7 +123,7 @@ func (this *QuoteParser) Next() (inner, outer string, err error) {
 	}
 	end := this.buffer.Index(this.closing)
 	if end < 0 && start >= 0 {
-		err = errors.New("no closing string found near " + this.buffer.SubEnd(start-len(this.opening)))
+		err = errors.New("no closing string '" + this.closing + "' found near " + this.buffer.SubEnd(start-len(this.opening)))
 		return
 	}
 	if this.HasNext() {
@@ -165,10 +166,7 @@ func (this *QuoteParser) String() string {
 var Config map[string][]string
 
 const (
-	SETTINGS = "pages.settings"
-	ALL      = "ALL"
-	NONE     = "NONE"
-	EXCEPT   = "EXCEPT"
+	SETTINGS = "pages.json"
 )
 
 //Settings file type
@@ -186,43 +184,25 @@ func LoadSettings() (s *Settings, err error) {
 //parse the informations in the settings file
 func (this *Settings) parse() (err error) {
 	settings, err := ioutil.ReadFile(SETTINGS)
-	if err != nil {
-		return
-	}
-	parser := NewQuoteParser(string(settings), "{", "}")
-	err = parser.Parse()
-	if err != nil {
-		return
-	}
-	key, values := parser.Outer(), parser.Parsed()
-	this.Data = make(map[string][]string)
-	for i, value := range values {
-		this.Data[strings.TrimSpace(key[i])] = strings.Fields(value)
-	}
-	for _, s := range []string{"extensions", "handle", "srcfolder", "default"} {
-		if this.Data[s] == nil {
-			err = errors.New("parsing settings file (pages.settings) failed : " + s + " invalid or not present")
+	config := make(map[string]string)
+	if err == nil {
+		err = json.Unmarshal(settings, &config)
+		if err != nil {
 			return
 		}
 	}
+	this.Data = make(map[string][]string)
+	if _, ok := config["extensions"]; !ok {
+		this.Data["extensions"] = []string{"ghtml"}
+	} else {
+		this.Data["extensions"] = strings.Split(config["extensions"], " ")
+	}
+	if _, ok := config["folders"]; !ok {
+		this.Data["folders"] = []string{"."}
+	} else {
+		this.Data["folders"] = strings.Split(config["folders"], " ")
+	}
 	err = this.GeneratePages()
-	if err != nil {
-		return
-	}
-	vals := this.Data["handle"]
-	if vals[0] == ALL {
-		this.Data["handle"] = this.Data["pages"]
-	} else if vals[0] == EXCEPT {
-		var vector []string
-		for _, page := range this.Data["pages"] {
-			for i := 1; i < len(vals); i++ {
-				if page != vals[i] {
-					vector = append(vector, page)
-				}
-			}
-		}
-		this.Data["handle"] = vector
-	}
 	return
 }
 
@@ -232,8 +212,17 @@ func (this *Settings) GeneratePages() (err error) {
 		return
 	}
 	var pages []string
-	pages, err = this.iterFiles(this.Data["srcfolder"][0], pages)
+	for i := 0; i < len(this.Data["folders"]); i++ {
+		pages, err = this.iterFiles(this.Data["folders"][i], pages)
+		if err != nil {
+			break
+			return
+		}
+	}
 	this.Data["pages"] = pages
+	//if len(pages) > 0 {
+	//	AddHandlers(pages)
+	//}
 	return
 }
 

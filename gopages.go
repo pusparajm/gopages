@@ -13,7 +13,6 @@ import (
 	"flag"
 	"os"
 	"os/exec"
-	"path"
 )
 
 const (
@@ -35,15 +34,20 @@ func main() {
 	}
 	settings, err := util.LoadSettings() //inits the settings and generates the .go source files
 	if err != nil {
-		//println(err.Error())
+		println(err.Error())
 		return
 	}
 	util.Config = settings.Data //stores settings to accessible variable
 	println("generated", len(settings.Data["pages"]), "gopages")
-	err = util.AddHandlers(settings.Data["handle"]) //add all handlers
+	err = util.AddHandlers(settings.Data["pages"]) //add all handlers
 	if err != nil {
 		println(err.Error())
 		return
+	}
+	if len(os.Args) > 1 && os.Args[1] == "get" {
+		build()
+	} else {
+		println("run \"gopages get\" to build with go get after generating pages")
 	}
 }
 
@@ -63,10 +67,9 @@ func build() (err error) {
 	if len(goexec) == 0 {
 		return errors.New("go not found in PATH")
 	}
-	source := ""
-	dir, file := path.Split(source)
+	dir := os.Getenv("PWD")
 	//	id, err := os.ForkExec(gofmt, []string{"", "-w", file}, os.Environ(), dir, fd)
-	process, err := os.StartProcess(file, []string{"", "get", file}, &os.ProcAttr{Env: os.Environ(), Files: fd, Dir: dir})
+	process, err := os.StartProcess(goexec, []string{"", "get"}, &os.ProcAttr{Env: os.Environ(), Files: fd, Dir: dir})
 	if err != nil {
 		return
 	} else {

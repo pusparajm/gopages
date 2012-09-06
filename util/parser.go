@@ -148,102 +148,34 @@ func Format(source string) (err error) {
 //codes that will be generated
 const (
 	httphandler = "http.Handle(\"/%s\", http.HandlerFunc(Render%s))\n"
-	initfunc    = "func init%s(){\n%s\n%s\n}\n"
-	startserver = `func Run(address string) (err error){
-						println("gopages serving on", address)
-						err = http.ListenAndServe(address, nil)
-						return
-					}
-					`
-	forbidden = `
-		func RenderGoPagesForbidden(conn http.ResponseWriter, request *http.Request){
-			conn.WriteHeader(403)
-			conn.Write([]byte("<h1>403 Forbidden</h1>"))
-		}
-		`
-	fileHandler = `
-		http.Handle("/", http.HandlerFunc(func(conn http.ResponseWriter, request *http.Request){
-			if request.URL.Path == "/"{
-				defaultPage := "%s"
-				if strings.TrimSpace(defaultPage) != ""{
-					http.Redirect(conn, request, defaultPage, http.StatusFound)
-				}
-				return
-			}
-			val := "%s" + request.URL.Path
-			_,err := os.Open(val)
-			if err!=nil{
-				conn.WriteHeader(404)
-				conn.Write([]byte("<h1>404 Not Found</h1>"))
-				return
-			}
-			http.ServeFile(conn, request, val)
-		}))
-		`
+	initfunc    = "func init(){%s}\n"
 )
 
 //add handlers to specified pages in settings file
 func AddHandlers(pages []string) (err error) {
-	initOthers := func(k, i int) string {
-		if k <= len(pages) {
-			return fmt.Sprintf("init%d()\n", i+1)
-		}
-		return ""
+	buffer := NewStringBuilder(fmt.Sprintf("%spackage %s\n", fmt.Sprintf(comment, ""), "pages"))
+	buffer.Append(importstring)
+	imports := []string{"code.google.com/p/gopages/pkg"}
+	for _, im := range imports {
+		buffer.Append(fmt.Sprintf("\"%s\"\n", im))
 	}
-	for i, j, k := 0, 0, 1000; j < len(pages); i++ {
-		p := fmt.Sprintf("handler%d.go", i)
-		if i == 0 {
-			p = "handler.go"
-		}
-		file := path.Join(DIR, p)
-		l := len(pages) - j
-		var slice []string
-		if l < 1000 {
-			slice = pages[j:]
-		} else {
-			slice = pages[j:k]
-		}
-		buffer := NewStringBuilder(fmt.Sprintf("%spackage %s\n", fmt.Sprintf(comment, ""), "pages"))
-		buffer.Append(importstring)
-		imports := []string{"os", "strings", "net/http"}
-		for _, im := range imports {
-			buffer.Append(fmt.Sprintf("\"%s\"\n", im))
-		}
-		buffer.Append("\n)\n")
-		handlers := NewStringBuilder("")
-		for _, page := range slice {
-			pg := strings.Split(page, "/")
-			pg = strings.Split(strings.Join(pg, ""), ".")
-			p := strings.Join(pg, "")
-			l0 := len(path.Ext(page))
-			wp := page[1 : len(page)-l0]
-			l0 = len(Config["srcfolder"][0])
-			wp = wp[l0:]
-			handlers.Append(fmt.Sprintf(httphandler, wp, p))
-			handlers.Append(fmt.Sprintf(httphandler, page[l0+1:], "GoPagesForbidden"))
-		}
-		if k > len(pages) {
-			buffer.Append(startserver)
-			buffer.Append(forbidden)
-			handlers.Append(fmt.Sprintf(fileHandler, Config["default"][0], Config["srcfolder"][0]))
-			handlers.Append(fmt.Sprintf(httphandler, Config["srcfolder"][0], "GoPagesForbidden"))
-			handlers.Append(fmt.Sprintf(httphandler, "pages", "GoPagesForbidden"))
-		}
-		st := fmt.Sprintf("%d", i)
-		if i == 0 {
-			st = ""
-		}
-		buffer.Append(fmt.Sprintf(initfunc, st, handlers.Content(), initOthers(k, i)))
-		err = ioutil.WriteFile(file, []byte(buffer.Content()), 0666)
-		if err != nil {
-			return
-		}
-		err = Format(file)
-		if err != nil {
-			return
-		}
-		j += 1000
-		k += 1000
+	buffer.Append("\n)\n")
+	functions := NewStringBuilder("")
+	for i := 0; i < len(pages); i++ {
+		tmp := strings.Split(pages[i], "/")
+		tmp = strings.Split(strings.Join(tmp, ""), ".")
+		f := strings.Join(tmp, "")
+		functions.Append(fmt.Sprintf("gopages.ParsedPages[\"%s\"] = Render%s\n", pages[i], f))
+	}
+	buffer.Append(fmt.Sprintf(initfunc, functions.Content()))
+	file := "pages/handler.go"
+	err = ioutil.WriteFile(file, []byte(buffer.Content()), 0666)
+	if err != nil {
+		return
+	}
+	err = Format(file)
+	if err != nil {
+		return
 	}
 	return
 }

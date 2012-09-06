@@ -8,135 +8,73 @@
 gopages - http://code.google.com/p/gopages
 ======
 
-A simple web framework with the objective of making web development in go easier
-With gopages you create web pages and embed codes in <?go ?> tags.
-It automatically adds http handlers for all pages with the 
-extensions you specify in the settings file and serves all files
-in the source folder with the exception of the source codes.
-gopages is compiled before execution.
-
+A simple web framework that allows embedding pages in <?go ?> tags.
 
 INSTALL
 ============
+-Command
 $ go get code.google.com/p/gopages
+-Package
+$ go get code.google.com/p/gopages/pkg
 
 EXAMPLES
 ========
 $ go get code.google.com/p/gopages/examples
+-Run
 $ $GOPATH/bin/examples
 
-a simple hello world example
+HELLO WORLD
 
-create a folder 'src' and create an index.ghtml file in it
-with the contents
+create a folder 'hello'
 
+create an index.ghtml
+-------
  <html> 
  	<body> 
  	<?go print("<h1>Hello World</h1>") ?> 
  	</body> 
  </html> 
- 
-then create a pages.settings file in the root folder (parent to src) with the contents
-
- extensions{ ghtml }
- 
- handle { ALL }
-
- srcfolder { src }
-
- default { index }
- 
-then create a hello.go in the root folder with the content
-
+-------
+then create hello.go
+-------
  package main
  
- import "pages" //generated package
+ import (
+ 	_ "code.google.com/p/gopages/examples/pages"	
+	"code.google.com/p/gopages/pkg"
+	"net/http"
+ )
  
  func main(){
-    pages.Run(":9999") //start server on localhost:9999
+    http.HandleFunc("/", gopages.Handler("hello.ghtml"))
+    http.ListenAndServe(":9999", nil)
  }
+-------
 
 open terminal
 
 $ cd path/to/project
-$ gopages && go get
+$ gopages get
+$ $GOPATH/bin/hello
 
-run the resulting executable
-
-finally, point your browser to localhost:9999
-
+finally, point your browser to localhost:9999 
 
 HOW IT WORKS
 ============
-gopages generates go source codes to a "pages" directory in your package root folder.
-The filenames of go source codes generated follow the rules
-	removes all '.' e.g. hello.ghtml will be helloghtml.go
-	names the file from the package root folder and removes all '/' e.g. src/hello.ghtml will now be srchelloghtml.go
-
-	inside each generated source file there is an handler function
-		func Rendersourcecodename(conn *http.Conn, request *http.Request)
-		e.g. hello.ghtml will generate func Rendersrchellohtml(conn *http.Conn, request *http.Request)
-
-	in case you want to add an handler manually though you mostly won't need to  
-	you should add the handler before calling pages.Run like the example below
-
-	package main
+gopages generates go source codes to "pages" directory in your project root folder.
+It is REQUIRED to run 'gopages' before 'go get' to build the whole project
+Or run 'gopages get' to build with 'go get' after generating pages
 	
-	import "pages"
-
-	func main(){
-		http.Handle("/manual", http.HandlerFunc(pages.Rendersrchelloghtml));
-		pages.Run(":9999")
-	}
-		
-GETTING STARTED
+ADDING SETTINGS
 ===============
-firstly, u must create a pages.settings File in your package root with the following rules
+create a pages.json file in project root with the format below.
 
-extensions { ghtml }
+{
+	"extensions" : "ghtml",
+	"folders" : "src"
+}
 
-handle { ALL }
+extensions - files to generate gopages for [optional][default is "ghtml"]
+folders - folders to look for gopages files [optional][default is project root]
+-separate multiple values with space. e.g. "extensions": "ghtml ghtm"
 
-srcfolder { src }
-
-default { index }
-
-extensions - contains file extensions of html pages you created the gopages way in the srcfolder
-	you can choose any extension. I used ghtml cos it sounds goish.
-	and you can have more than one e.g. extensions { ghtml do gsp }
-
-handle - contains pages to automatically add handlers for and there are keywords ALL and EXCEPT
-	ALL - will handle all pages in src folder with the extensions you specify
-	EXCEPT - will handle all but the pages that follow e.g. handle { EXCEPT hello.ghtml echo.ghtml }
-	- you can also list the pages to handle e.g. handle { hello.ghtml hello.html }
-	I added this cos there may be need to manually handle some pages
-
-srcfolder - folder where the source files are located (just one value)
-
-default - the page to load by default (one value) e.g. the Hello World example loads index by default
-
-Only the braces matters, you can separate with any whitespace character
-
-Then create your webpages with the rules
-	Design your webpages normally and embed your codes in <?go ?> tags just like php
-	if you need to import any package, your webpage must begin with "{{ libraries to import }}" without quotes
-		e.g. {{ strconv io ioutil }} <html> <head> ...
-		you can separate them with any whitespace character(s)
-	there are some built-in variables and functions to use: 
-		conn *http.ResponseWriter, request *http.Request, formValue(key string), print(text ...interface{})
-		- formValue(key string) to retrieve value from GET or POST requests
-		- print(text ...interface) to print any data type
-		- to do other things, read the godoc for http.ResponseWriter and http.Request
-
-All your pages and anything you want gopages to handle must be in the srcfolder 
-you specify in the settings file, you may add other handlers manually if you need 
-to access other locations
-
-the srcfolder and pages folder (where generated codes are stored) are not accessible through http requests
-
-To access your pages from web browser, use the path without the file extension.
-Just like the hello world example above, the address to locate the index.ghtml file is localhost:9999/index
-
-NOTE:
-having index.ghtml and index.do in same folder where gopages is handling both ghtml and do
-will lead to having only one, with one overwriting the other, the one generated last.

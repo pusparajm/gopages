@@ -9,10 +9,11 @@ import (
 	"time"
 )
 
-func Rendersrcechoghtml(conn http.ResponseWriter, request *http.Request) {
-	conn.Header().Set("Content-Type", "text/html")
+func Rendersrcechoghtml(writer http.ResponseWriter, request *http.Request) {
+	request.ParseForm()
+	writer.Header().Set("Content-Type", "text/html")
 	print := func(toPrint ...interface{}) {
-		fmt.Fprint(conn, toPrint...)
+		fmt.Fprint(writer, toPrint...)
 	}
 	formValue := func(keyToGet string) string {
 		return request.FormValue(keyToGet)
@@ -20,11 +21,11 @@ func Rendersrcechoghtml(conn http.ResponseWriter, request *http.Request) {
 	print("")
 	formValue("") // prevent initialization runtime error
 
-	fmt.Fprint(conn, `
+	fmt.Fprint(writer, `
 <html>
 	<head><title>`)
 	print("Echo with gopages")
-	fmt.Fprint(conn, `</title>
+	fmt.Fprint(writer, `</title>
 	<body>
 		<a href="hello" >Hello example</a> <br>
 		<img src="gopages.png" />		
@@ -36,7 +37,7 @@ func Rendersrcechoghtml(conn http.ResponseWriter, request *http.Request) {
 		print("you input '" + a + "'")
 	}
 
-	fmt.Fprint(conn, `
+	fmt.Fprint(writer, `
 		<form action="/echo" method="post">
 			Input <input type="text" name="input"/>
 			<input type="submit" value="Echo with POST"/>
@@ -50,7 +51,7 @@ func Rendersrcechoghtml(conn http.ResponseWriter, request *http.Request) {
 
 	print("page generated on " + time.Now().String())
 
-	fmt.Fprint(conn, `
+	fmt.Fprint(writer, `
 	</body>
 </html>
 `)

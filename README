@@ -46,7 +46,7 @@ then create hello.go
  )
  
  func main(){
-    http.HandleFunc("/", gopages.Handler("index.ghtml"))
+    http.HandleFunc("/", gopages.Handler("hello.ghtml"))
     http.ListenAndServe(":9999", nil)
  }
 -------
@@ -64,6 +64,15 @@ HOW IT WORKS
 gopages generates go source codes to "pages" directory in your project root folder.
 It is REQUIRED to run 'gopages' before 'go get' to build the whole project
 Or run 'gopages get' to build with 'go get' after generating pages
+
+INBUILT FUNCTIONS
+- print(...interface{})
+- formValue(string) - retrieve formValue
+
+VARIABLES
+writer http.ResponseWriter
+request *http.Request
+
 	
 ADDING SETTINGS
 ===============

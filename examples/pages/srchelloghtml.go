@@ -9,10 +9,11 @@ import (
 	"time"
 )
 
-func Rendersrchelloghtml(conn http.ResponseWriter, request *http.Request) {
-	conn.Header().Set("Content-Type", "text/html")
+func Rendersrchelloghtml(writer http.ResponseWriter, request *http.Request) {
+	request.ParseForm()
+	writer.Header().Set("Content-Type", "text/html")
 	print := func(toPrint ...interface{}) {
-		fmt.Fprint(conn, toPrint...)
+		fmt.Fprint(writer, toPrint...)
 	}
 	formValue := func(keyToGet string) string {
 		return request.FormValue(keyToGet)
@@ -20,11 +21,11 @@ func Rendersrchelloghtml(conn http.ResponseWriter, request *http.Request) {
 	print("")
 	formValue("") // prevent initialization runtime error
 
-	fmt.Fprint(conn, `
+	fmt.Fprint(writer, `
 <html>
 	<head><title>`)
 	print("Hello with gopages")
-	fmt.Fprint(conn, `</title>
+	fmt.Fprint(writer, `</title>
 	<body>
 		<a href="echo">Echo example</a><br>
 		<img src="gopages.png" />
@@ -32,23 +33,23 @@ func Rendersrchelloghtml(conn http.ResponseWriter, request *http.Request) {
 
 	for i := 1; i < 5; i++ {
 
-		fmt.Fprint(conn, `
+		fmt.Fprint(writer, `
 			<h`)
 		print(i)
-		fmt.Fprint(conn, `>Hello gopages</h`)
+		fmt.Fprint(writer, `>Hello gopages</h`)
 		print(i)
-		fmt.Fprint(conn, `>
+		fmt.Fprint(writer, `>
 		`)
 
 	}
 
-	fmt.Fprint(conn, `
+	fmt.Fprint(writer, `
 		<hr>
 		`)
 
 	print("page generated on " + time.Now().String())
 
-	fmt.Fprint(conn, `
+	fmt.Fprint(writer, `
 	</body>
 </html>
 `)

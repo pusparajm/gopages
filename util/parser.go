@@ -28,7 +28,7 @@ var (
 					formValue := func(keyToGet string) string{
 						return request.FormValue(keyToGet)
 					}
-					print(""); formValue("")// prevent initialization runtime error
+					_ = print; _ = formValue// prevent initialization runtime error
 
 			`
 	importstring = "\nimport(\n"
@@ -147,7 +147,9 @@ func ParseCodeString(content, name string) (string, error) {
 	}
 	codes, html := codeParser.Parsed(), codeParser.Outer()
 	for i, code := range codes {
-		codeBuffer.Append(fmt.Sprintf(printstring, html[i]))
+		if strings.TrimSpace(html[i]) != "" {
+			codeBuffer.Append(fmt.Sprintf(printstring, html[i]))
+		}
 		if strings.TrimSpace(code) == "" && len(codes) == 1 {
 			break
 		}

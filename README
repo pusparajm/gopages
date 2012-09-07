@@ -61,7 +61,7 @@ finally, point your browser to localhost:9999
 
 HOW IT WORKS
 ============
-gopages generates go source codes to "pages" directory in your project root folder.
+gopages generates go source codes to "pages" directory in your project folder.
 It is REQUIRED to run 'gopages' before 'go get' to build the whole project
 Or run 'gopages get' to build with 'go get' after generating pages
 
@@ -72,6 +72,16 @@ INBUILT FUNCTIONS
 VARIABLES
 writer http.ResponseWriter
 request *http.Request
+
+TAGS
+=====
+-CODE
+	<?go ?> 
+	e.g. 	"<p> <?go print(i) ?>"
+-FRAGMENTS
+	<go:include page="path/to/fragment" />
+	e.g. 	<go:include page="fragments/login.ghtml" />
+			<go:include page="fragments/footer.html" />
 
 	
 ADDING SETTINGS

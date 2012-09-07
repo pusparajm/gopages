@@ -17,6 +17,7 @@
 			Input <input type="text" name="input"/>
 			<input type="submit" value="Echo with GET"/>
 		</form>
+		<go:include page="src/fragment.html" />
 			<hr>
 		<?go
 			print("page generated on " +time.Now().String())

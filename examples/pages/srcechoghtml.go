@@ -4,6 +4,7 @@
 package pages
 
 import (
+	"code.google.com/p/gopages/pkg"
 	"fmt"
 	"net/http"
 	"time"
@@ -46,6 +47,31 @@ func Rendersrcechoghtml(writer http.ResponseWriter, request *http.Request) {
 			Input <input type="text" name="input"/>
 			<input type="submit" value="Echo with GET"/>
 		</form>
+		`)
+
+	fmt.Fprint(writer, `<h3>
+ `)
+	print("Fragment")
+	fmt.Fprint(writer, `
+ `)
+	i := 3
+	fmt.Fprint(writer, `
+</h3>
+`)
+
+	fmt.Fprint(writer, `<h`)
+	print(i + 1)
+	fmt.Fprint(writer, `>
+fragment in a frgment
+</h`)
+	print(i + 1)
+	fmt.Fprint(writer, `>
+`)
+
+	fmt.Fprint(writer, `
+`)
+
+	fmt.Fprint(writer, `
 			<hr>
 		`)
 
@@ -56,4 +82,7 @@ func Rendersrcechoghtml(writer http.ResponseWriter, request *http.Request) {
 </html>
 `)
 
+}
+func init() {
+	gopages.ParsedPaths["pages/srcechoghtml.go"] = "src/echo.ghtml"
 }

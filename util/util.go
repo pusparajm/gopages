@@ -121,14 +121,29 @@ func (this *QuoteParser) Next() (inner, outer string, err error) {
 	if start >= 0 {
 		start += len(this.opening)
 	}
-	end := this.buffer.Index(this.closing)
+	end := -1
+	if start >= 0 {
+		end = strings.Index(this.buffer.SubEnd(start), this.closing)
+		if end >= 0 {
+			end += start
+		}
+	}
+	//	end := this.buffer.Index(this.closing)
 	if end < 0 && start >= 0 {
 		err = errors.New("no closing string '" + this.closing + "' found near " + this.buffer.SubEnd(start-len(this.opening)))
+		return
+	}
+	if start >= end && end > -1 {
+		err = errors.New("no matching closing string '" + this.closing + "' found near " + this.buffer.SubEnd(start-len(this.opening)))
 		return
 	}
 	if this.HasNext() {
 		inner = this.buffer.Sub(start, end)
 	}
+	//if len(this.opening) > 4 {
+	//	println(start, end, this.closing, inner)
+	//}
+	//println(this.opening)
 	if this.buffer.Len() > 0 {
 		l := this.buffer.Index(this.opening)
 		if l < 0 {
@@ -148,13 +163,22 @@ func (this *QuoteParser) Next() (inner, outer string, err error) {
 //Resets the content to its state before parsing
 func (this *QuoteParser) Reset() {
 	this.buffer = this.static
+	this.outer = []string{}
+	this.inner = []string{}
 }
 
 //Checks whether there is next set of data to parse
 func (this *QuoteParser) HasNext() (res bool) {
 	start := this.buffer.Index(this.opening)
-	end := this.buffer.Index(this.closing)
-	return (start >= 0 && end >= 0)
+	end := -1
+	if start >= 0 {
+		end = strings.Index(this.buffer.SubEnd(start), this.closing)
+		if end >= 0 {
+			end += start
+		}
+	}
+	//end := this.buffer.Index(this.closing)
+	return (start >= 0 && end >= 0 && start < end)
 }
 
 //Returns the remaining content in the buffer being used
@@ -166,7 +190,8 @@ func (this *QuoteParser) String() string {
 var Config map[string][]string
 
 const (
-	SETTINGS = "pages.json"
+	SETTINGS   = "pages.json"
+	PATHS_FILE = "pages/.pages"
 )
 
 //Settings file type

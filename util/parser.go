@@ -57,7 +57,7 @@ func NewPage(page string) (p *Page, err error) {
 }
 
 // parse the page and stores the resulting string in the buffer
-// use ParseToFIle instead to write to string to file
+// use ParseToFile instead to write to string to file
 func (this *Page) Parse() (err error) {
 	data, err := ioutil.ReadFile(this.page) //reads file into memory
 	if err != nil {
@@ -77,28 +77,24 @@ func (this *Page) Parse() (err error) {
 	buffer := NewStringBuilder(fmt.Sprintf("%spackage %s\n", fmt.Sprintf(comment, " from "+this.page), "pages"))
 	buffer.Append(importstring)
 	for _, im := range this.imports {
-		if im != "net/http" && im != "fmt" {
+		if im != "net/http" && im != "fmt" && im != "code.google.com/p/gopages/pkg" {
 			buffer.Append(fmt.Sprintf("\"%s\"\n", im))
 		}
 	}
-	buffer.Append("\t\"net/http\"\n\t\"fmt\"\n)\n")
+	buffer.Append("\t\"net/http\"\n\t\"fmt\"\n\t\"code.google.com/p/gopages/pkg\"\n)\n")
 	pg := strings.Split(this.page, "/")
 	pg = strings.Split(strings.Join(pg, ""), ".")
 	buffer.Append(fmt.Sprintf(method, strings.Join(pg, "")))
-	codeParser := NewQuoteParser(content, "<?go", "?>")
-	err = codeParser.Parse()
+	content, err = ParseFragments(content, this.page)
 	if err != nil {
-		err = errors.New("error from " + this.page + " :" + err.Error())
-		return
+		return err
 	}
-	codes, html := codeParser.Parsed(), codeParser.Outer()
-	for i, code := range codes {
-		buffer.Append(fmt.Sprintf(printstring, html[i]))
-		buffer.Append(fmt.Sprintf("%s\n", code))
-	}
+	buffer.Append(content)
 	buffer.Append("\n}\n")
+	initStr := fmt.Sprintf("\ngopages.ParsedPaths[\"pages/%s.go\"] = \"%s\"\n", strings.Join(pg, ""), this.page)
+	buffer.Append(fmt.Sprintf(initfunc, initStr))
 	this.content = buffer.Content()
-	return nil
+	return err
 }
 
 // behaves like Parse but writes to the corresponding output file
@@ -132,18 +128,71 @@ func Format(source string) (err error) {
 	}
 	fd := []*os.File{os.Stdin, os.Stdout, os.Stderr}
 	file := source
-	//	dir, file := path.Split(source)
-	//println(source, dir, file)
-	//	id, err := os.ForkExec(gofmt, []string{"", "-w", file}, os.Environ(), dir, fd)
 	process, err := os.StartProcess(gofmt, []string{"", "-w", file}, &os.ProcAttr{Env: os.Environ(), Files: fd})
 	if err != nil {
 		println(err.Error())
 		return
 	} else {
 		process.Wait()
-		//os.Wait(id, 0)
 	}
 	return nil
+}
+
+func ParseCodeString(content, name string) (string, error) {
+	codeParser := NewQuoteParser(content, "<?go", "?>")
+	codeBuffer := NewStringBuilder("")
+	err := codeParser.Parse()
+	if err != nil {
+		return "", err
+	}
+	codes, html := codeParser.Parsed(), codeParser.Outer()
+	for i, code := range codes {
+		codeBuffer.Append(fmt.Sprintf(printstring, html[i]))
+		if strings.TrimSpace(code) == "" && len(codes) == 1 {
+			break
+		}
+		codeBuffer.Append(fmt.Sprintf("%s\n", code))
+	}
+	return codeBuffer.Content(), nil
+}
+
+func ParseFragments(content, name string) (string, error) {
+	fragmentsParser := NewQuoteParser(content, "<go:include", ">")
+	err := fragmentsParser.Parse()
+	if err != nil {
+		err = errors.New("error from " + name + " :" + err.Error())
+		return "", err
+	}
+	buffer := NewStringBuilder("")
+	frags, others := fragmentsParser.Parsed(), fragmentsParser.Outer()
+	for i, frag := range frags {
+		code, err := ParseCodeString(others[i], name)
+		if err != nil {
+			err = errors.New("error from " + name + " :" + err.Error())
+			return "", err
+		}
+		if frag == "" && len(frags) == 1 {
+			return code, nil
+		}
+		buffer.Append(code)
+		if frag == "" && len(frags) == i+1 {
+			break
+		}
+		st := strings.Split(frag, "\"")
+		if len(st) < 3 {
+			return "", errors.New("error from " + name + " around " + frag)
+		}
+		data, err := ioutil.ReadFile(st[1])
+		if err != nil {
+			return "", errors.New("error from " + st[1] + " :" + err.Error())
+		}
+		frag, err = ParseFragments(string(data), st[1])
+		if err != nil {
+			return "", err
+		}
+		buffer.Append(fmt.Sprintf("%s\n", frag))
+	}
+	return buffer.Content(), nil
 }
 
 //codes that will be generated
@@ -162,11 +211,13 @@ func AddHandlers(pages []string) (err error) {
 	}
 	buffer.Append("\n)\n")
 	functions := NewStringBuilder("")
+	pathmap := NewStringBuilder("")
 	for i := 0; i < len(pages); i++ {
 		tmp := strings.Split(pages[i], "/")
 		tmp = strings.Split(strings.Join(tmp, ""), ".")
 		f := strings.Join(tmp, "")
 		functions.Append(fmt.Sprintf("gopages.ParsedPages[\"%s\"] = Render%s\n", pages[i], f))
+		pathmap.Append(fmt.Sprintf("pages/%s.go %s\n", f, pages[i]))
 	}
 	buffer.Append(fmt.Sprintf(initfunc, functions.Content()))
 	file := "pages/handler.go"
@@ -178,5 +229,6 @@ func AddHandlers(pages []string) (err error) {
 	if err != nil {
 		return
 	}
+	ioutil.WriteFile(PATHS_FILE, []byte(pathmap.Content()), 0666)
 	return
 }

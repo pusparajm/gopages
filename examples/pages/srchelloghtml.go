@@ -4,6 +4,7 @@
 package pages
 
 import (
+	"code.google.com/p/gopages/pkg"
 	"fmt"
 	"net/http"
 	"time"
@@ -54,4 +55,7 @@ func Rendersrchelloghtml(writer http.ResponseWriter, request *http.Request) {
 </html>
 `)
 
+}
+func init() {
+	gopages.ParsedPaths["pages/srchelloghtml.go"] = "src/hello.ghtml"
 }

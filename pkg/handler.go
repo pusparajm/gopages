@@ -9,6 +9,7 @@ package gopages
 
 import "net/http"
 
+var ParsedPaths = make(map[string]string)
 var ParsedPages = make(map[string]func(http.ResponseWriter, *http.Request))
 
 // Handler to use with http.HandleFunc. page is the path to gopages file
